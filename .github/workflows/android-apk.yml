@@ -45,24 +45,19 @@ jobs:
 
       - name: Extract Slice Launcher source
         run: |
-          test -f SliceLauncher-source-upload.zip
           mkdir -p source
           unzip -q SliceLauncher-source-upload.zip -d source
-          test -f source/SliceLauncher/gradlew
           chmod +x source/SliceLauncher/gradlew
 
       - name: Fix JitPack dependency
         working-directory: source/SliceLauncher
         run: |
           sed -i 's/com.github.SliceLauncher:alsoft-android-aar/com.github.MojoLauncher:alsoft-android-aar/' app_slice/build.gradle
-          grep 'alsoft-android-aar' app_slice/build.gradle
 
       - name: Fix duplicate Android resource
         working-directory: source/SliceLauncher
         run: |
           sed -i '/<color name="mineknob_track_tint">.*<\/color>/d' app_slice/src/main/res/values/colors.xml
-          echo "Checking for remaining duplicate color:"
-          grep -n 'mineknob_track_tint' app_slice/src/main/res/values/colors.xml || true
 
       - name: Fetch source submodules
         working-directory: source/SliceLauncher
@@ -71,6 +66,17 @@ jobs:
           git clone --depth 1 --branch master https://github.com/MojoLauncher/mojoexec.git mojoexec
           git clone --depth 1 --branch main https://github.com/MojoLauncher/MojoSDL.git sdl
           git clone --depth 1 --branch master https://github.com/MojoLauncher/NoBlocklist.git NoBlocklist
+
+      - name: Fix MojoExec package imports
+        working-directory: source/SliceLauncher
+        run: |
+          test -f mojoexec/jni_bindings/src/main/java/git/artdeell/mojoexec/MojoExec.java
+          grep -RIl --include='*.java' 'com.slice.launcherexec' app_slice/src/main/java | xargs -r sed -i 's/com\.slice\.launcherexec/git.artdeell.mojoexec/g'
+          if grep -RIn --include='*.java' 'com.slice.launcherexec' app_slice/src/main/java; then
+            echo "Old MojoExec package reference remains"
+            exit 1
+          fi
+          grep -RIn --include='*.java' 'git.artdeell.mojoexec.MojoExec' app_slice/src/main/java
 
       - name: Download optional LTW dependency
         uses: dawidd6/action-download-artifact@v6
