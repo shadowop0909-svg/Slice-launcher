@@ -31,6 +31,8 @@ jobs:
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
 
+      - name: Install Android SDK tools
+        run: sdkmanager "platform-tools"
       - name: Install Android NDK
         run: sdkmanager "ndk;29.0.14206865"
 
