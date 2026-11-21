@@ -68,6 +68,31 @@ jobs:
           git clone --depth 1 --branch main https://github.com/MojoLauncher/MojoSDL.git sdl
           git clone --depth 1 --branch master https://github.com/MojoLauncher/NoBlocklist.git NoBlocklist
 
+      - name: Prepare native CMake source directories
+        working-directory: source/SliceLauncher
+        run: |
+          JNI_DIR="app_slice/src/main/jni"
+
+          test -f "$JNI_DIR/CMakeLists.txt"
+
+          for dir in mojoexec glfw sdl; do
+            if [ ! -f "$dir/CMakeLists.txt" ]; then
+              echo "Missing root source directory or CMakeLists.txt: $dir"
+              exit 1
+            fi
+
+            rm -rf "$JNI_DIR/$dir"
+            cp -a "$dir" "$JNI_DIR/$dir"
+
+            if [ ! -f "$JNI_DIR/$dir/CMakeLists.txt" ]; then
+              echo "Failed to prepare $JNI_DIR/$dir"
+              exit 1
+            fi
+          done
+
+          echo "Prepared native CMake source directories:"
+          ls -ld "$JNI_DIR/mojoexec" "$JNI_DIR/glfw" "$JNI_DIR/sdl"
+
       - name: Fix MojoExec package imports
         working-directory: source/SliceLauncher
         run: |
