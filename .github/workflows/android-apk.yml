@@ -51,6 +51,12 @@ jobs:
           test -f source/SliceLauncher/gradlew
           chmod +x source/SliceLauncher/gradlew
 
+      - name: Fix JitPack dependency
+        working-directory: source/SliceLauncher
+        run: |
+          sed -i 's/com.github.SliceLauncher:alsoft-android-aar/com.github.MojoLauncher:alsoft-android-aar/' app_slice/build.gradle
+          grep 'alsoft-android-aar' app_slice/build.gradle
+
       - name: Fetch source submodules
         working-directory: source/SliceLauncher
         run: |
