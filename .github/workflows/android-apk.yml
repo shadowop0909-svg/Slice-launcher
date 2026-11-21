@@ -57,6 +57,13 @@ jobs:
           sed -i 's/com.github.SliceLauncher:alsoft-android-aar/com.github.MojoLauncher:alsoft-android-aar/' app_slice/build.gradle
           grep 'alsoft-android-aar' app_slice/build.gradle
 
+      - name: Fix duplicate Android resource
+        working-directory: source/SliceLauncher
+        run: |
+          sed -i '/<color name="mineknob_track_tint">.*<\/color>/d' app_slice/src/main/res/values/colors.xml
+          echo "Checking for remaining duplicate color:"
+          grep -n 'mineknob_track_tint' app_slice/src/main/res/values/colors.xml || true
+
       - name: Fetch source submodules
         working-directory: source/SliceLauncher
         run: |
