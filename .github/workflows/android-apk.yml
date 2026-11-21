@@ -16,6 +16,7 @@ jobs:
     name: Build debug APKs
     runs-on: ubuntu-22.04
     timeout-minutes: 90
+
     env:
       CURSEFORGE_API_KEY: DUMMY
 
@@ -71,12 +72,41 @@ jobs:
         working-directory: source/SliceLauncher
         run: |
           test -f mojoexec/jni_bindings/src/main/java/git/artdeell/mojoexec/MojoExec.java
+
           grep -RIl --include='*.java' 'com.slice.launcherexec' app_slice/src/main/java | xargs -r sed -i 's/com\.slice\.launcherexec/git.artdeell.mojoexec/g'
+
           if grep -RIn --include='*.java' 'com.slice.launcherexec' app_slice/src/main/java; then
             echo "Old MojoExec package reference remains"
             exit 1
           fi
+
           grep -RIn --include='*.java' 'git.artdeell.mojoexec.MojoExec' app_slice/src/main/java
+
+      - name: Migrate legacy Turnip call to current MojoExec API
+        working-directory: source/SliceLauncher
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path("app_slice/src/main/java/com/slice/launcher/game/renderer/GameRenderer.java")
+          source = path.read_text()
+
+          old = "MojoExec.setUseTurnip(true);"
+          new = 'MojoExec.configureCustomVulkanDriver("libvulkan_freedreno.so", null);'
+
+          count = source.count(old)
+
+          if count != 1:
+              raise SystemExit(
+                  f"Expected exactly one legacy Turnip call, found {count}"
+              )
+
+          path.write_text(source.replace(old, new))
+          PY
+
+          grep -n 'configureCustomVulkanDriver' app_slice/src/main/java/com/slice/launcher/game/renderer/GameRenderer.java
+
+          grep -q 'configureCustomVulkanDriver(String libraryName, String librarySearchPath)' mojoexec/jni_bindings/src/main/java/git/artdeell/mojoexec/MojoExec.java
 
       - name: Download optional LTW dependency
         uses: dawidd6/action-download-artifact@v6
